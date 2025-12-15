@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"finance-help/config"
 	"finance-help/internal/handlers"
 	"log"
@@ -8,6 +9,8 @@ import (
 	"os/signal"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"google.golang.org/api/option"
+	"google.golang.org/api/sheets/v4"
 )
 
 func main() {
@@ -22,6 +25,31 @@ func main() {
 
 	tgHandler := handlers.NewTelegramHandler(bot)
 
+	ctx := context.Background()
+	srv, err := sheets.NewService(ctx, option.WithHTTPClient(cfg.GoogleClient))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Sheets client: %v", err)
+	}
+
+	// Prints the names and majors of students in a sample spreadsheet:
+	// https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+	spreadsheetId := "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+	readRange := "Class Data!A2:E"
+	resp, err := srv.Spreadsheets.Values.Get(spreadsheetId, readRange).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve data from sheet: %v", err)
+	}
+
+	if len(resp.Values) == 0 {
+		log.Println("No data found.")
+	} else {
+		log.Println("Name, Major:")
+		for _, row := range resp.Values {
+			// Print columns A and E, which correspond to indices 0 and 4.
+			log.Printf("%s, %s\n", row[0], row[4])
+		}
+	}
+	
 	// Create a new UpdateConfig struct with an offset of 0. Offsets are used
 	// to make sure Telegram knows we've handled previous values and we don't
 	// need them repeated.
