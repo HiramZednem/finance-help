@@ -1,89 +1,46 @@
 package main
 
 import (
-	"context"
-	"finance-help/config"
-	"finance-help/internal/handlers"
+	// "finance-help/config"
+	// "fmt"
 	"log"
-	"os"
-	"os/signal"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"google.golang.org/api/option"
-	"google.golang.org/api/sheets/v4"
+	"net/http"
+	// "strings"
 )
 
 func main() {
-	cfg := config.LoadConfig()
-	log.Println("Config Loaded")
+	// cfg := config.LoadConfig()
+	// log.Println("Config Loaded")
 
-	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
-	if err != nil {
-		log.Fatal("Err creating the bot: ", err)
-	}
-	log.Println("Bot created")
+	// client := &http.Client{}
 
-	tgHandler := handlers.NewTelegramHandler(bot)
+	// TODO: get rid of tgbotapi dependency...
+	// TODO: extract from ngrok the public endpoint and set as webhook
+	// {{domain}}/bot{{token}}/setWebhook
+	// url := fmt.Sprintf("%s/bot%s/setWebhook", cfg.TelegramApiEndpoint, cfg.TelegramToken)
+	// body := fmt.Sprintf(`{"url": "%s"}`, "https://1d96-189-203-103-72.ngrok-free.app/test")
+	// req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(body))
 
-	ctx := context.Background()
-	srv, err := sheets.NewService(ctx, option.WithHTTPClient(cfg.GoogleClient))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets client: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatal("Err creating request: ", err)
+	// }
 
-	// Prints the names and majors of students in a sample spreadsheet:
-	// https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-	spreadsheetId := "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-	readRange := "Class Data!A2:E"
-	resp, err := srv.Spreadsheets.Values.Get(spreadsheetId, readRange).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve data from sheet: %v", err)
-	}
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	log.Fatal("Err sending request: ", err)
+	// }
 
-	if len(resp.Values) == 0 {
-		log.Println("No data found.")
-	} else {
-		log.Println("Name, Major:")
-		for _, row := range resp.Values {
-			// Print columns A and E, which correspond to indices 0 and 4.
-			log.Printf("%s, %s\n", row[0], row[4])
-		}
-	}
-	
-	// Create a new UpdateConfig struct with an offset of 0. Offsets are used
-	// to make sure Telegram knows we've handled previous values and we don't
-	// need them repeated.
-	updateConfig := tgbotapi.NewUpdate(0)
+	// log.Println("Response status: ", resp.Status)
 
-	// Tell Telegram we should wait up to 30 seconds on each request for an
-	// update. This way we can get information just as quickly as making many
-	// frequent requests without having to send nearly as many.
-	updateConfig.Timeout = 30
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Received request")
+		log.Println(r.Body) 
+		w.WriteHeader(http.StatusOK)
+ 	    w.Write([]byte("OK"))
+	})
 
-	// Start polling Telegram for updates.
-	updates := bot.GetUpdatesChan(updateConfig)
-
-
-	// TODO: improve this
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-
-	log.Println("Setting Update Handler")
-
-	for {
-		select {
-		case update := <-updates:
-			if update.Message != nil {
-				tgHandler.HandleUpdate(update)
-			}
-
-		case <-sig:
-			log.Println("Stopping bot...")
-
-			bot.StopReceivingUpdates()
-
-			log.Println("Bot stopped cleanly.")
-			return
-		}
+	log.Println("Starting server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal("Err starting server: ", err)
 	}
 }

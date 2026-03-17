@@ -1,13 +1,18 @@
 # Finance Help
 This proyect is simple.
 
-It updates a google sheets sheet from whatsapp / telegram (idea still in progress)
+Telegram Balance Bot, data saved on postgresql
 
+# Setup
+- 1. Install Grok
+- 2. Set Webhook grok endpoint... Guide: https://core.telegram.org/bots/api
+- 3. Fill .env with your token
 
-# Improves
-- [ ] set telegram thru webhook for instant reply, at the moment using long term pool
-- [ ] Mover todo lo de load config relacionado con google a su propio servicio y en el constructor realizar las inicializaciones, si aun no esta inicializado el usuario, realizar el init, usando el servicio de telegram. 
+# WIP
+- [x] set telegram thru webhook for instant reply 
+- [ ] detect env and when dev get url from ngrok and set it
+- [ ] map tg events to go
+- [ ] set db
 
 # References and guides used
 https://medium.com/@smart_byte_labs/organize-like-a-pro-a-simple-guide-to-go-project-folder-structures-e85e9c1769c2
-https://go-telegram-bot-api.dev/

@@ -6,3 +6,6 @@ default: run
 
 run:
 	go run $(MAIN)
+
+ngrok:
+	ngrok http 8080
