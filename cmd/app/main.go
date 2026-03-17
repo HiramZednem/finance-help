@@ -3,6 +3,7 @@ package main
 import (
 	// "finance-help/config"
 	// "fmt"
+	"io"
 	"log"
 	"net/http"
 	// "strings"
@@ -34,9 +35,19 @@ func main() {
 
 	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received request")
-		log.Println(r.Body) 
+    
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Println("Err reading body: ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer r.Body.Close()
+
+		log.Println("Request body: ", string(bodyBytes))
+
 		w.WriteHeader(http.StatusOK)
- 	    w.Write([]byte("OK"))
+		w.Write([]byte("OK"))
 	})
 
 	log.Println("Starting server on :8080")
