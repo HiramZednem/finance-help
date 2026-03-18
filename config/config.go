@@ -10,6 +10,7 @@ import (
 type Config struct {
 	TelegramToken string
 	TelegramApiEndpoint string
+	ENV string
 }
 
 func LoadConfig() *Config {
@@ -30,9 +31,15 @@ func LoadConfig() *Config {
 		panic("Telegram API Endpoint not available")
 	}
 
+	env := os.Getenv("ENV")
+	if env == "" {
+		log.Println("ENV not set, defaulting to 'dev'")
+		env = "dev"
+	}
 
 	return &Config{
 		TelegramToken: telegram_token,
 		TelegramApiEndpoint: telegram_api_endpoint,
+		ENV: env,
 	}
 }
