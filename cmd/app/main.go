@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"finance-help/config"
+	"finance-help/internal/web/controllers"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os/exec"
@@ -15,76 +15,66 @@ func main() {
 	cfg := config.LoadConfig()
 	log.Println("Config Loaded")
 
-	client := &http.Client{}
-
-	// TODO: get rid of tgbotapi dependency...
-	// TODO: extract from ngrok the public endpoint and set as webhook
-	// {{domain}}/bot{{token}}/setWebhook
-	url := fmt.Sprintf("%s/bot%s/setWebhook", cfg.TelegramApiEndpoint, cfg.TelegramToken)
-
-	if cfg.ENV == "dev" {
+	if cfg.ENV == "ngrok" {
 		urlChan := make(chan string)
-
-		cmd := exec.Command("ngrok", "http", "8080", "--log=stdout")
-
-		reader, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal("Error creando el pipe:", err)
-		}
-
-		if err := cmd.Start(); err != nil {
-			log.Fatal("Error iniciando ngrok:", err)
-		}
-
-		go func() {
-			sc := bufio.NewScanner(reader)
-			for sc.Scan() {
-				if strings.Contains(sc.Text(), "url=") {
-					_, after, _:= strings.Cut(sc.Text(), "url=");
-					urlChan <- after
-				}
-			}
-		}()
-
-		publicURL := <-urlChan
-		log.Println(fmt.Sprintf("URL NGROK: %s", publicURL))
-
-		body := fmt.Sprintf(`{"url": "%s"}`, )
-		req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(body))
-
-		if err != nil {
-			log.Fatal("Err creating request: ", err)
-		}
-
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Fatal("Err sending request: ", err)
-		}
-
-		log.Println("Response status: ", resp.Status)
+		initNgrok(urlChan)
+		setTelegramWebhook(*cfg, urlChan)
 	}
 
-	
+	tgController := controllers.NewTelegramController()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Received request")
+	http.HandleFunc("/", tgController.HandleEvent)
 
-		bodyBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Println("Err reading body: ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer r.Body.Close()
-
-		log.Println("Request body: ", string(bodyBytes))
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
-
-	log.Println("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Printf("Starting server on :%s", cfg.PORT)
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.PORT), nil); err != nil {
 		log.Fatal("Err starting server: ", err)
 	}
+}
+
+func initNgrok(urlChan chan string) {
+	cmd := exec.Command("ngrok", "http", "8080", "--log=stdout")
+
+	reader, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal("Error creating reader: ", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		log.Fatal("Error starting ngrok:", err)
+	}
+
+	go func() {
+		sc := bufio.NewScanner(reader)
+		for sc.Scan() {
+			if strings.Contains(sc.Text(), "url=") {
+				_, after, _ := strings.Cut(sc.Text(), "url=")
+				urlChan <- after
+			}
+		}
+	}()
+}
+
+func setTelegramWebhook(cfg config.Config, urlChan chan string) {
+	publicURL := <-urlChan
+
+	log.Printf("URL NGROK: %s", publicURL)
+
+
+	client := &http.Client{}
+	url := fmt.Sprintf("%s/bot%s/setWebhook", cfg.TelegramApiEndpoint, cfg.TelegramToken)
+	body := fmt.Sprintf(`{"url": "%s"}`, publicURL)
+
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(body))
+	if err != nil {
+		log.Fatal("Err creating request: ", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("Err sending request: ", err)
+	}
+
+	log.Println("Response status: ", resp.Status)
 }

@@ -1,5 +1,5 @@
 # Finance Help
-This proyect is simple.
+This project is simple.
 
 Telegram Balance Bot, data saved on postgresql
 
@@ -10,8 +10,10 @@ Telegram Balance Bot, data saved on postgresql
 
 # WIP
 - [x] set telegram thru webhook for instant reply 
-- [ ] detect env and when dev get url from ngrok and set it
+- [x] detect env and when dev get url from ngrok and set it
 - [ ] map tg events to go
+- [ ] Implement Telegram Client to de the request 
+- [ ] Implement base response
 - [ ] set db
 
 # References and guides used
