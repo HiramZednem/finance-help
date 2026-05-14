@@ -9,7 +9,7 @@ import (
 )
 
 type TelegramControllerImpl struct {
-	// TODO: add service
+
 }
 
 type TelegramControllerInterface interface {
