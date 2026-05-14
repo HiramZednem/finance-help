@@ -14,6 +14,7 @@ Telegram Balance Bot, data saved on postgresql
 - [ ] map tg events to go
 - [ ] Implement Telegram Client to de the request 
 - [ ] Implement base response
+- [ ] Implement whatsapp Client
 - [ ] set db
 
 # References and guides used

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"finance-help/config"
+	"finance-help/internal/services"
 	"finance-help/internal/web/controllers"
 	"fmt"
 	"log"
@@ -21,9 +22,11 @@ func main() {
 		setTelegramWebhook(*cfg, urlChan)
 	}
 
-	tgController := controllers.NewTelegramController()
+	tgService := services.NewTelegramServiceImpl()
+	// TODO: temporal, just to simulate whatsapp impl for future reference.
+	messageController := controllers.NewMessageServiceController(tgService, tgService)
 
-	http.HandleFunc("/", tgController.HandleEvent)
+	http.HandleFunc("/", messageController.HandleEvent)
 
 	log.Printf("Starting server on :%s", cfg.PORT)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.PORT), nil); err != nil {
@@ -58,7 +61,6 @@ func setTelegramWebhook(cfg config.Config, urlChan chan string) {
 	publicURL := <-urlChan
 
 	log.Printf("URL NGROK: %s", publicURL)
-
 
 	client := &http.Client{}
 	url := fmt.Sprintf("%s/bot%s/setWebhook", cfg.TelegramApiEndpoint, cfg.TelegramToken)

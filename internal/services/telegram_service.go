@@ -1,11 +1,13 @@
 package services
 
-
 type TelegramServiceImpl struct {
-	BaseMessageService 
+	BaseMessageService
 }
 
-func (t *TelegramServiceImpl) SendMessage() {
-	
+func NewTelegramServiceImpl() MessageServiceInterface {
+	return &TelegramServiceImpl{}
 }
 
+func (t *TelegramServiceImpl) SendMessage(text string) {
+
+}

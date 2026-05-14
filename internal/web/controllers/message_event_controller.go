@@ -2,29 +2,33 @@ package controllers
 
 import (
 	"encoding/json"
+	"finance-help/internal/services"
 	"finance-help/internal/web/dtos"
 	"io"
 	"log"
 	"net/http"
 )
 
-type TelegramControllerImpl struct {
-
+type MessageControllerImpl struct {
+	telegramSvc services.MessageServiceInterface
+	whatsappSvc services.MessageServiceInterface
 }
 
-type TelegramControllerInterface interface {
+type MessageEventControllerInterface interface {
 	HandleEvent(w http.ResponseWriter, r *http.Request)
 }
 
-func NewTelegramController() TelegramControllerInterface {
-	return &TelegramControllerImpl{}
+func NewMessageServiceController(telegramSvc services.MessageServiceInterface, whatsappSvc services.MessageServiceInterface) MessageEventControllerInterface {
+	return &MessageControllerImpl{
+		telegramSvc: telegramSvc,
+		whatsappSvc: whatsappSvc,
+	}
 }
 
-func (t *TelegramControllerImpl) HandleEvent(w http.ResponseWriter, r *http.Request) {
+func (t *MessageControllerImpl) HandleEvent(w http.ResponseWriter, r *http.Request) {
+	// TODO: identify which service should be used
+	// TODO: move telegram send message to send message.
 	// TODO: add origin verification...
-
-	
-
 
 	telegramBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -41,12 +45,14 @@ func (t *TelegramControllerImpl) HandleEvent(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	log.Printf("Message from: %s\nContent: %s", telegramEvent.Message.From.Username, telegramEvent.Message.Text)	
+	t.telegramSvc.ProcessMessage(telegramEvent.Message.Text)
+
+	// log.Printf("Message from: %s\nContent: %s", telegramEvent.Message.From.Username, telegramEvent.Message.Text)
 
 	response := map[string]interface{}{
-		"method": "sendMessage",
+		"method":  "sendMessage",
 		"chat_id": telegramEvent.Message.Chat.ID,
-		"text": "Testing",
+		"text":    "Testing",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -57,6 +63,4 @@ func (t *TelegramControllerImpl) HandleEvent(w http.ResponseWriter, r *http.Requ
 	}
 	w.Write(responseBytes)
 
-		
-	
 }

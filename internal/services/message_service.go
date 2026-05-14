@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type MessageServiceInterface interface {
+	SendMessage(message string) 
+	ProcessMessage(message string) error
+}
+
 type BaseMessageService struct{}
 
 func (b *BaseMessageService) ProcessMessage(message string) error {
